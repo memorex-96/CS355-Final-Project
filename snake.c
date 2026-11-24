@@ -4,7 +4,8 @@
 
 #define GAME_H 20 
 #define GAME_W 60 
-
+#define TICK 120 // in ms 
+ 
 static void intro_screen (void) {
   static const char* lines[] = {"SNAKE", "CS355", "Made by:", "Carson Crowley", "and", "Trebor Labree", " ", "Press 's' to start"}; 
   int n = (int)(sizeof lines / sizeof lines[0]);
@@ -28,6 +29,44 @@ static void intro_screen (void) {
 
   delwin(intro); 
 }
+ 
+void move_in_dir(char c, int* x, int* y) {  // const movement in dir 
+  switch (c) {
+    case 'n':
+      (*y)--; 
+      break; 
+    case 's': 
+      (*y)++; 
+      break; 
+    case 'e':
+      (*x)++; 
+      break; 
+    case 'w':
+      (*x)--; 
+      break; 
+  }
+}
+
+static void set_dir (int key, char* direction) {
+  switch (key) {
+    case KEY_UP: 
+      case 'w': 
+        *direction = 'n'; 
+        break; 
+    case KEY_DOWN: 
+      case 's': 
+        *direction = 's'; 
+        break; 
+    case KEY_LEFT: 
+      case 'a': 
+        *direction = 'w'; 
+        break; 
+    case KEY_RIGHT: 
+      case 'd': 
+        *direction = 'e'; 
+        break; 
+  }
+}
 
 int main (void) {   
 
@@ -36,7 +75,7 @@ int main (void) {
   int y = GAME_H / 2; 
   int x = GAME_W / 2; 
   
-  //char direction; // need a n,s,e,w for the player to constantly move in a direction 
+  char direction = 'n'; // need a n,s,e,w for the player to constantly move in a direction 
 
   int c;
   initscr(); 
@@ -48,33 +87,29 @@ int main (void) {
 
   game = newwin(GAME_H, GAME_W, 1, 2); 
   keypad(game, TRUE); // fopr arrow keys 
-
+  
+  werase(game); 
   box(game, 0, 0); //border 
   
   mvwaddch(game, y, x, '.');
   wrefresh(game); 
+  
+  wtimeout(game, TICK); 
 
   while ((c = wgetch(game))!= 'q') {
+    if (c != ERR) set_dir(c, &direction); 
+     
     mvwaddch(game, y, x, ' ');  // erase prev dot 
+    move_in_dir(direction, &x, &y); // step 
     
-    switch (c) {
-      case 'w' : 
-        case KEY_UP: 
-          if (y > 1) y--; 
-          break; 
-      case 's': 
-        case KEY_DOWN:
-          if (y < GAME_H - 2) y++; 
-          break; 
-      case 'a': 
-        case KEY_LEFT:
-          if (x > 1) x--; 
-          break; 
-      case 'd': 
-        case KEY_RIGHT: 
-          if (x < GAME_W - 2) x++; 
-          break; 
-    }
+    /* Right now, just going to wrap when hit border, but hitting border should
+     * make player lose */
+
+    if (y < 1) y = GAME_H - 2; 
+    else if (y > GAME_H - 2) y = 1; 
+
+    if (x < 1) x = GAME_W - 2; 
+    else if (x > GAME_W - 2) x = 1; 
 
     mvwaddch(game, y, x, '.');   // at new pos add the character 
     wrefresh(game); 
