@@ -68,6 +68,16 @@ static void set_dir (int key, char* direction) {
   }
 }
 
+int score = 0;
+
+void score_board(WINDOW *score_point){
+  wclear(score_point); // Clear the score board
+  box(score_point, 0, 0);
+  wmove(score_point, 1, 1);
+  wprintw(score_point, "Score: %d", score);
+  wrefresh(score_point); // Refresh to show update.
+}
+
 int main (void) {   
 
   WINDOW* game; 
@@ -84,6 +94,12 @@ int main (void) {
   curs_set(0); 
 
   intro_screen(); 
+
+   // Creates score board
+  WINDOW *score_point = newwin(4, 20, 0, 0);
+  box(score_point, 0, 0);
+  wprintw(score_point, "Score %d", score);
+  wrefresh(score_point);
 
   game = newwin(GAME_H, GAME_W, 1, 2); 
   keypad(game, TRUE); // fopr arrow keys 
