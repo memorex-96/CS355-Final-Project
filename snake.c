@@ -1,6 +1,8 @@
 #include <stdio.h> 
 #include <ncurses.h> 
 #include <string.h> 
+#include <time.h> 
+#include <stdlib.h> 
 
 #define GAME_H 20 
 #define GAME_W 60 
@@ -78,6 +80,19 @@ void score_board(WINDOW *score_point){
   wrefresh(score_point); // Refresh to show update.
 }
 
+// primary use for consumable position 
+struct Position {
+  int x; 
+  int y; 
+}; 
+
+struct Position generate_food (int max_x, int max_y) {
+  struct Position food; 
+  food.x = (rand() % (max_x - 2)) + 1; 
+  food.y = (rand() % (max_y - 2)) + 1; 
+  return food; 
+}
+
 int main (void) {   
 
   WINDOW* game; 
@@ -92,11 +107,15 @@ int main (void) {
   cbreak(); 
   noecho();  
   curs_set(0); 
+  srand(time(NULL));
 
   intro_screen(); 
+  
+  struct Position food = generate_food(GAME_W - 2, GAME_H - 2);
 
-   // Creates score board
-  WINDOW *score_point = newwin(4, 20, 0, 0);
+
+  // Creates score board
+  WINDOW *score_point = newwin(4, 20, 10, 65);
   box(score_point, 0, 0);
   wprintw(score_point, "Score %d", score);
   wrefresh(score_point);
@@ -112,6 +131,8 @@ int main (void) {
   
   wtimeout(game, TICK); 
 
+  mvwaddch(game, food.y, food.x, 'X');
+
   while ((c = wgetch(game))!= 'q') {
     if (c != ERR) set_dir(c, &direction); 
      
@@ -125,7 +146,20 @@ int main (void) {
     else if (y > GAME_H - 2) y = 1; 
 
     if (x < 1) x = GAME_W - 2; 
-    else if (x > GAME_W - 2) x = 1; 
+    else if (x > GAME_W - 2) x = 1;
+
+    if (x == food.x && y == food.y) {
+      score += 5; 
+      food = generate_food(GAME_W - 2, GAME_H - 2);
+      werase(score_point);
+      box(score_point, 0, 0);
+      mvwprintw(score_point, 1, 1, "Score: %d", score); 
+      wrefresh(score_point); 
+
+      mvwaddch(game, food.y, food.x, 'X'); 
+
+    }
+
 
     mvwaddch(game, y, x, '.');   // at new pos add the character 
     wrefresh(game); 
