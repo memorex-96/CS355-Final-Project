@@ -31,6 +31,10 @@ static void intro_screen (void) {
 
   delwin(intro); 
 }
+
+static void lose_screen (void) {
+
+}
  
 void move_in_dir(char c, int* x, int* y) {  // const movement in dir 
   switch (c) {
