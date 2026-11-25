@@ -7,7 +7,8 @@
 #define GAME_H 20 
 #define GAME_W 60 
 #define TICK 120 // in ms 
- 
+int score = 0; 
+
 static void intro_screen (void) {
   static const char* lines[] = {"SNAKE", "CS355", "Made by:", "Carson Crowley", "and", "Trebor Labree", " ", "Press 's' to start"}; 
   int n = (int)(sizeof lines / sizeof lines[0]);
@@ -33,7 +34,29 @@ static void intro_screen (void) {
 }
 
 static void lose_screen (void) {
+  static const char* lines[] ={"GAME OVER!", "Press any key to exit"}; 
+  int n = (int)(sizeof lines / sizeof lines[0]); 
+  int top = (GAME_H - n)/2; 
 
+  WINDOW* over = newwin(GAME_H, GAME_W, 1, 2); 
+  if (over == NULL) return; 
+
+  box(over, 0, 0); 
+
+  for (int i = 0; i < n; i++) {
+    int len = (int)strlen(lines[i]); 
+    int left = (GAME_W - len) / 2; 
+    mvwaddstr(over, top +i, left, lines[i]); 
+  }
+  
+  char score_line[50]; 
+  snprintf(score_line, sizeof score_line, "Final score: %d", score); 
+  int score_len = (int)strlen(score_line); 
+  mvwaddstr(over, top + n + 1, (GAME_W - score_len) / 2, score_line); 
+
+  wrefresh(over);
+  wgetch(over); 
+  delwin(over); 
 }
  
 void move_in_dir(char c, int* x, int* y) {  // const movement in dir 
@@ -77,8 +100,6 @@ static void set_dir (int key, char* direction, char* player) {
         break; 
   }
 }
-
-int score = 0;
 
 void score_board(WINDOW *score_point){
   wclear(score_point); // Clear the score board
@@ -199,6 +220,16 @@ static int is_reverse (char from, char to) {
   (from == 'e'&& to == 'w') || (from == 'w' && to == 'e'); 
 }
 
+// quick idea for lose condition, really needs to be checked later 
+static int snake_hits_self (const struct Snake* head) {
+  if (head == NULL) return 0; 
+
+  for (const struct Snake* s = head->next; s != NULL; s = s->next) {
+    if (s->x == head->x && s->y == head->y) return 1; 
+  }
+  return 0; 
+}
+
 int main (void) {   
 
   WINDOW* game; 
@@ -281,7 +312,10 @@ int main (void) {
     }
 
     // need func to end game if snake hits its self or border 
-
+    if (snake_hits_self(snake)) {
+      lose_screen(); 
+      break; 
+    }
     werase(game); 
     box(game, 0,0); 
     mvwaddch(game, food.y, food.x, 'X'); 
