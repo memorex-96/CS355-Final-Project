@@ -53,23 +53,27 @@ void move_in_dir(char c, int* x, int* y) {  // const movement in dir
   }
 }
 
-static void set_dir (int key, char* direction) {
+static void set_dir (int key, char* direction, char* player) {
   switch (key) {
     case KEY_UP: 
       case 'w': 
         *direction = 'n'; 
+        *player = '^'; 
         break; 
     case KEY_DOWN: 
       case 's': 
-        *direction = 's'; 
+        *direction = 's';
+        *player = 'v'; 
         break; 
     case KEY_LEFT: 
       case 'a': 
-        *direction = 'w'; 
+        *direction = 'w';
+        *player = '<'; 
         break; 
     case KEY_RIGHT: 
       case 'd': 
-        *direction = 'e'; 
+        *direction = 'e';
+        *player = '>'; 
         break; 
   }
 }
@@ -97,6 +101,104 @@ struct Position generate_food (int max_x, int max_y) {
   return food; 
 }
 
+/*   SNAKE STUFF   */
+/* snake struct, going to be a linked list */
+struct Snake {
+  int x, y;  // segment position  
+  char head; // depends on direction snake is facing ^, <, >, V 
+  char body; // _, |
+  struct Snake* next; 
+}; 
+
+static struct Snake* snake_node (int x, int y) {
+  struct Snake* n = malloc(sizeof(*n)); // has to be freed btw (free_snake_mem) 
+  if (n == NULL) return NULL; 
+  n->x = x; 
+  n->y = y; 
+  n->head = '^'; 
+  n->body = '='; 
+  n->next = NULL; 
+  return n; 
+}
+
+static struct Snake* snake_create (int x, int y) {
+  return snake_node(x,y); 
+}
+
+static void append_snake_segment (struct Snake* head) {
+  if (head == NULL) return; 
+  struct Snake* tail = head; 
+
+  while (tail->next != NULL) tail = tail->next; 
+
+  struct Snake* n = snake_node(tail->x, tail->y); 
+  if (n != NULL) tail->next = n; 
+}
+
+static void snake_step (struct Snake* head, char dir) {
+  if (head == NULL) return; 
+
+  int px = head->x; 
+  int py = head->y; 
+
+  move_in_dir (dir, &head->x, &head->y); 
+  for (struct Snake* s = head->next; s != NULL; s = s->next) {
+    int tx = s->x; 
+    int ty = s->y; 
+    s->x = px; 
+    s->y = py; 
+    px = tx; 
+    py = ty; 
+  }
+}
+
+/* consumable shouldn't spawn on where the player is occupying space  */
+static int occupied (const struct Snake* head, int x, int y) {
+  for (const struct Snake* s = head; s != NULL; s = s->next) {
+    if (s->x == x && s->y == y) return 1; 
+  }
+  return 0; 
+}
+
+static void draw_snake (WINDOW* game, struct Snake* head) {
+  struct Snake* prev = NULL; 
+
+  for (struct Snake* s = head; s!= NULL; s = s->next) {
+    if (s == head) mvwaddch(game, s->y, s->x, s->head); 
+    else {
+      if (s->next != NULL) s->body = (s->y == s->next->y) ? '=' : '|'; 
+      else if (prev != NULL) s->body = (s->y == prev->y) ? '=' : '|';
+
+      mvwaddch(game, s->y, s->x, s->body);
+    }
+    prev = s; 
+  }
+}
+
+static void free_snake_mem (struct Snake* head) {
+  while (head != NULL) {
+    struct Snake* next = head->next; 
+    free(head); 
+    head = next; 
+  }
+} 
+
+// right now wrapping when hit border, player should lose when they hit border
+// created helper to clean up main 
+static void wrap_pos (int* x, int* y) {
+  if (*y < 1) *y = GAME_H - 2; 
+  else if (*y > GAME_H - 2) *y = 1; 
+
+  if (*x < 1) *x = GAME_W - 2; 
+  else if (*x > GAME_W - 2) *x = 1; 
+}
+
+// issue with snake being able to move 180 degrees 
+static int is_reverse (char from, char to) {
+  return (from == 'n' && to == 's') || (from== 's'&& to == 'n')||
+  (from == 'e'&& to == 'w') || (from == 'w' && to == 'e'); 
+}
+
 int main (void) {   
 
   WINDOW* game; 
@@ -114,9 +216,16 @@ int main (void) {
   srand(time(NULL));
 
   intro_screen(); 
-  
-  struct Position food = generate_food(GAME_W - 2, GAME_H - 2);
 
+  struct Snake* snake = snake_create(x,y); 
+  if (snake == NULL) {
+    endwin(); 
+    return 1; 
+  }
+  struct Position food = generate_food(GAME_W - 2, GAME_H - 2);
+  while (occupied(snake, food.x, food.y)) {
+    food = generate_food(GAME_W - 2, GAME_H - 2); 
+  }
 
   // Creates score board
   WINDOW *score_point = newwin(4, 20, 10, 65);
@@ -125,50 +234,63 @@ int main (void) {
   wrefresh(score_point);
 
   game = newwin(GAME_H, GAME_W, 1, 2); 
-  keypad(game, TRUE); // fopr arrow keys 
+  keypad(game, TRUE); // fopr arrow keys
+  wtimeout(game, TICK); 
   
   werase(game); 
   box(game, 0, 0); //border 
-  
-  mvwaddch(game, y, x, '.');
+  mvwaddch(game, food.y, food.x, 'X'); // we can change food char to something esle also 
+  draw_snake(game, snake); 
   wrefresh(game); 
   
-  wtimeout(game, TICK); 
-
-  mvwaddch(game, food.y, food.x, 'X');
+  
+  char player = '^'; 
 
   while ((c = wgetch(game))!= 'q') {
-    if (c != ERR) set_dir(c, &direction); 
-     
-    mvwaddch(game, y, x, ' ');  // erase prev dot 
-    move_in_dir(direction, &x, &y); // step 
+    if (c != ERR) {
+      char old_dir = direction; 
+      char old_player = player; 
+
+      set_dir(c, &direction, &player); 
+      if (is_reverse(old_dir, direction)) {
+        direction = old_dir; 
+        player = old_player; 
+      }
+      snake->head = player; 
+    }
     
-    /* Right now, just going to wrap when hit border, but hitting border should
-     * make player lose */
+    int nx = snake->x; 
+    int ny = snake->y; 
+    move_in_dir (direction, &nx, &ny); 
+    wrap_pos (&nx, &ny); 
 
-    if (y < 1) y = GAME_H - 2; 
-    else if (y > GAME_H - 2) y = 1; 
-
-    if (x < 1) x = GAME_W - 2; 
-    else if (x > GAME_W - 2) x = 1;
-
-    if (x == food.x && y == food.y) {
+    int ate = (nx == food.x && ny == food.y); 
+    if (ate) {
       score += 5; 
-      food = generate_food(GAME_W - 2, GAME_H - 2);
-      werase(score_point);
-      box(score_point, 0, 0);
-      mvwprintw(score_point, 1, 1, "Score: %d", score); 
-      wrefresh(score_point); 
-
-      mvwaddch(game, food.y, food.x, 'X'); 
-
+      append_snake_segment(snake); 
     }
 
+    snake_step(snake, direction); 
+    wrap_pos(&snake->x, &snake->y); 
 
-    mvwaddch(game, y, x, '.');   // at new pos add the character 
+    if (ate) {
+      do {
+        food = generate_food(GAME_W - 2, GAME_H - 2); 
+      } while (occupied(snake, food.x, food.y));
+      score_board(score_point); 
+    }
+
+    // need func to end game if snake hits its self or border 
+
+    werase(game); 
+    box(game, 0,0); 
+    mvwaddch(game, food.y, food.x, 'X'); 
+    draw_snake(game, snake); 
     wrefresh(game); 
   }
   
+  free_snake_mem(snake); 
+  delwin(score_point); 
   delwin(game); 
   endwin(); 
 
