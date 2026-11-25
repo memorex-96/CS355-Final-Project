@@ -6,7 +6,7 @@
 
 #define GAME_H 20 
 #define GAME_W 60 
-#define TICK 120 // in ms 
+#define TICK 85 // in ms 
 int score = 0; 
 
 static void intro_screen (void) {
