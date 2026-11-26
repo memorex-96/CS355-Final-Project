@@ -302,7 +302,6 @@ int main (void) {
     int nx = snake->x; 
     int ny = snake->y; 
     move_in_dir (direction, &nx, &ny); 
-    wrap_pos (&nx, &ny); 
 
     int ate = (nx == food.x && ny == food.y); 
     if (ate) {
@@ -311,7 +310,6 @@ int main (void) {
     }
 
     snake_step(snake, direction); 
-    wrap_pos(&snake->x, &snake->y); 
 
     if (ate) {
       do {
@@ -321,7 +319,7 @@ int main (void) {
     }
 
     // need func to end game if snake hits its self or border 
-    if (snake_hits_self(snake)) {
+    if (snake_hits_self(snake) || snake_hits_border(snake)) {
       lose_screen(); 
       break; 
     }
