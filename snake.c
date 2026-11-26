@@ -230,6 +230,15 @@ static int snake_hits_self (const struct Snake* head) {
   return 0; 
 }
 
+static int snake_hits_border (const struct Snake* head){
+  if (head == NULL) return 0;
+
+  if (head->x <= 0 || head->x >= GAME_W - 1 || head->y <= 0 || head->y >= GAME_H - 1){
+        return 1;
+    }
+    return 0;
+}
+
 int main (void) {   
 
   WINDOW* game; 
