@@ -230,11 +230,11 @@ static int snake_hits_self (const struct Snake* head) {
   return 0; 
 }
 
-static int snake_hits_border (const struct Snake* head){
-  if (head == NULL) return 0;
+static int snake_hits_border (const struct Snake* head){ // Checks to see if the snake hit the border
+  if (head == NULL) return 0; // returns true if snake hasn't hit anything
 
-  if (head->x <= 0 || head->x >= GAME_W - 1 || head->y <= 0 || head->y >= GAME_H - 1){
-        return 1;
+  if (head->x <= 0 || head->x >= GAME_W - 1 || head->y <= 0 || head->y >= GAME_H - 1){ // Checks to see if the snake has hit either side of the border
+        return 1; // returns false
     }
     return 0;
 }
@@ -268,13 +268,13 @@ int main (void) {
   }
 
   // Creates score board
-  WINDOW *score_point = newwin(4, 20, 10, 65);
-  box(score_point, 0, 0);
-  wprintw(score_point, "Score %d", score);
-  wrefresh(score_point);
+  WINDOW *score_point = newwin(4, 20, 10, 65); // Pointer for score box
+  box(score_point, 0, 0); // Creates box for score
+  wprintw(score_point, "Score %d", score); // Prints the score
+  wrefresh(score_point); // Refreshes score
 
   game = newwin(GAME_H, GAME_W, 1, 2); 
-  keypad(game, TRUE); // fopr arrow keys
+  keypad(game, TRUE); // for arrow keys
   wtimeout(game, TICK); 
   
   werase(game); 
@@ -318,10 +318,9 @@ int main (void) {
       score_board(score_point); 
     }
 
-    // need func to end game if snake hits its self or border 
-    if (snake_hits_self(snake) || snake_hits_border(snake)) {
-      lose_screen(); 
-      break; 
+    if (snake_hits_self(snake) || snake_hits_border(snake)) { // If the snake hits itself or the border
+      lose_screen(); // Calls the function where the player gets a loser screen. 
+      break;  // Breaks the loop.
     }
     werase(game); 
     box(game, 0,0); 
