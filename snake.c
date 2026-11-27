@@ -4,8 +4,8 @@
 #include <time.h> 
 #include <stdlib.h> 
 
-#define GAME_H 20 
-#define GAME_W 60 
+#define GAME_H 20  // was 20 
+#define GAME_W 40  // was 60 
 #define TICK 85 // in ms 
 int score = 0; 
 
@@ -57,6 +57,40 @@ static void lose_screen (void) {
   wrefresh(over);
   wgetch(over); 
   delwin(over); 
+}
+
+static void win_screen(void) {
+  static const char* lines[] = {
+    "YOU WIN!", 
+    "Snake has grown to equal size of half the border!", 
+    "Press any key to exit"
+  };
+
+  int n = (int)(sizeof lines / sizeof lines[0]); 
+  int top = (GAME_H - n) / 2; 
+
+  WINDOW* win = newwin(GAME_H, GAME_W, 1, 2); 
+  if (win == NULL) return; 
+
+  box(win, 0, 0); 
+
+  for (int i = 0; i < n; i++) {
+    int len = (int)strlen(lines[i]); 
+    int left = (GAME_W - len) / 2; 
+
+    mvwaddstr(win, top + i, left, lines[i]);
+  }
+
+  char score_line[50]; 
+  snprintf(score_line, sizeof(score_line), "Final Score: %d", score); 
+
+  int score_len = (int)strlen(score_line); 
+
+  mvwaddstr(win, top + n + 1, (GAME_W - score_len) / 2, score_line); 
+
+  wrefresh(win); 
+  wgetch(win); 
+  delwin(win); 
 }
  
 void move_in_dir(char c, int* x, int* y) {  // const movement in dir 
@@ -127,7 +161,7 @@ struct Position generate_food (int max_x, int max_y) {
 struct Snake {
   int x, y;  // segment position  
   char head; // depends on direction snake is facing ^, <, >, V 
-  char body; // _, |
+  char body; // =, |
   struct Snake* next; 
 }; 
 
@@ -204,16 +238,6 @@ static void free_snake_mem (struct Snake* head) {
   }
 } 
 
-// right now wrapping when hit border, player should lose when they hit border
-// created helper to clean up main 
-static void wrap_pos (int* x, int* y) {
-  if (*y < 1) *y = GAME_H - 2; 
-  else if (*y > GAME_H - 2) *y = 1; 
-
-  if (*x < 1) *x = GAME_W - 2; 
-  else if (*x > GAME_W - 2) *x = 1; 
-}
-
 // issue with snake being able to move 180 degrees 
 static int is_reverse (char from, char to) {
   return (from == 'n' && to == 's') || (from== 's'&& to == 'n')||
@@ -237,6 +261,15 @@ static int snake_hits_border (const struct Snake* head){ // Checks to see if the
         return 1; // returns false
     }
     return 0;
+}
+
+static int snake_length (const struct Snake* head) {
+  int length = 0; 
+
+  for (const struct Snake* s = head; s != NULL; s = s->next) {
+    length++; 
+  }
+  return length; 
 }
 
 int main (void) {   
@@ -317,11 +350,17 @@ int main (void) {
       } while (occupied(snake, food.x, food.y));
       score_board(score_point); 
     }
-
+    
+    if (snake_length(snake) >= GAME_H + GAME_W) { // snake_length(snake)
+      win_screen(); 
+      break; 
+    }
+    
+    
     if (snake_hits_self(snake) || snake_hits_border(snake)) { // If the snake hits itself or the border
       lose_screen(); // Calls the function where the player gets a loser screen. 
       break;  // Breaks the loop.
-    }
+    } 
     werase(game); 
     box(game, 0,0); 
     mvwaddch(game, food.y, food.x, 'X'); 
