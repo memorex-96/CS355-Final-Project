@@ -34,7 +34,7 @@ static void intro_screen (void) {
 }
 
 static void lose_screen (void) {
-  static const char* lines[] ={"GAME OVER!", "Press any key to exit"}; 
+  static const char* lines[] ={"GAME OVER!", "Press 'e' to exit"}; 
   int n = (int)(sizeof lines / sizeof lines[0]); 
   int top = (GAME_H - n)/2; 
 
@@ -55,7 +55,9 @@ static void lose_screen (void) {
   mvwaddstr(over, top + n + 1, (GAME_W - score_len) / 2, score_line); 
 
   wrefresh(over);
-  wgetch(over); 
+  while (wgetch(over) != 'e') {
+
+  }
   delwin(over); 
 }
 
@@ -166,7 +168,7 @@ struct Snake {
 }; 
 
 static struct Snake* snake_node (int x, int y) {
-  struct Snake* n = malloc(sizeof(*n)); // has to be freed btw (free_snake_mem) 
+  struct Snake* n = (struct Snake*)malloc(sizeof(*n)); // has to be freed btw (free_snake_mem) 
   if (n == NULL) return NULL; 
   n->x = x; 
   n->y = y; 
@@ -318,6 +320,11 @@ int main (void) {
   
   
   char player = '^'; 
+  
+  // init with 3 bodty segments 
+  for (int i = 0; i < 3; i++) {
+    append_snake_segment(snake);
+  }
 
   while ((c = wgetch(game))!= 'q') {
     if (c != ERR) {
