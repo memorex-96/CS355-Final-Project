@@ -21,7 +21,7 @@ make bootstrap
 make run
 ```
 
-Codespaces provides passwordless `sudo`, so `make bootstrap` can install `build-essential` and `libncurses-dev`. Use the integrated terminal (Terminal → New Terminal), not the Output or Debug Console — ncurses needs a real TTY.
+Codespaces provides passwordless `sudo`, so `make bootstrap` can install `build-essential` and `libncurses-dev`. 
 
 > Codespace containers are rebuilt from scratch. After a rebuild or when creating a new Codespace, run `make setup` again before building.
 
@@ -35,7 +35,7 @@ make bootstrap
 make run
 ```
 
-`make bootstrap` installs the required build tools and the ncurses development package (it will prompt for your `sudo` password), then builds the game. After the first setup, use:
+`make bootstrap` installs the required build tools and the ncurses development package, then builds the game. After the first setup, use:
 
 ```bash
 make        # build
@@ -53,31 +53,18 @@ make run    # build and play
 | `make clean` | Remove the built binary |
 | `make help` | Show available targets |
 
-## Manual setup
+## Snake Game 
+### Controls 
+The snake is controlled via keyboard input: 
+  > WASD 
+  > Arrow keys 
+and each window prompt explains which required key needs to be pressed so that the player can continue. 
 
-If you prefer to install dependencies yourself:
-
-```bash
-sudo apt update
-sudo apt install -y build-essential libncurses-dev
-make
-```
-
-Verify ncurses is available:
-
-```bash
-pkg-config --modversion ncursesw || ls /usr/include/ncurses.h
-```
-
-## Troubleshooting
-
-- **`ncurses development files are missing`** — run `make setup` or install `libncurses-dev` manually.
-- **`make: *** missing separator`** — Makefile recipe lines must be tab-indented, not space-indented.
-- **Terminal looks broken after quitting** — run `reset`. Make sure the game calls `endwin()` on exit.
-- **Nothing renders or the output looks wrong** — run `./snake` from an interactive terminal (WSL or Codespaces). ncurses needs a real TTY.
-- **`TERM` issues** — check `echo $TERM`; it should be something like `xterm-256color`.
-- **CRLF or `bad interpreter` errors** — clone the repo into the Linux filesystem (`~/...`), not `/mnt/c/...`, and keep Makefile/source files LF-only.
-- **Codespaces: dependencies disappear after a rebuild** — rerun `make setup` or `make bootstrap`.
-- **Codespaces: `sudo: a password is required`** — the default Codespaces image supports passwordless `sudo`; if you use a custom dev container, install `build-essential` and `libncurses-dev` in its configuration.
-- **Codespaces: ncurses output is garbled or missing** — run `make run` from the integrated terminal, not the Output or Debug Console, and make the terminal at least 80×24.
-
+### Gameplay
+Snake is a game where you move a snake within an area called a `snake pit`. 
+The `Goal` is to grow your snake within the `snake pit` until the snake is equal half the length of the perimeter of the border size. 
+To grow the snake, you must eat randomly-spawned consumable items. Each consumed item increases the snake length by 1 segment, and adds to the score. 
+However, there are some obstacles: 
+ > The snake must avoid touching the walls 
+ > The snake must avoid running into itself
+Both situations will cause the snake to instantly die. 
