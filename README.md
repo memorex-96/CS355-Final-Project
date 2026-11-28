@@ -56,8 +56,12 @@ make run    # build and play
 ## Snake Game 
 ### Controls 
 The snake is controlled via keyboard input: 
-  > WASD 
-  > Arrow keys 
+```
+```
+   WASD 
+   Arrow keys 
+```
+```
 and each window prompt explains which required key needs to be pressed so that the player can continue. 
 
 ### Gameplay
@@ -65,6 +69,10 @@ Snake is a game where you move a snake within an area called a `snake pit`.
 The `Goal` is to grow your snake within the `snake pit` until the snake is equal half the length of the perimeter of the border size. 
 To grow the snake, you must eat randomly-spawned consumable items. Each consumed item increases the snake length by 1 segment, and adds to the score. 
 However, there are some obstacles: 
- > The snake must avoid touching the walls 
- > The snake must avoid running into itself
+```
+```
+The snake must avoid touching the walls 
+The snake must avoid running into itself
+```
+```
 Both situations will cause the snake to instantly die. 
